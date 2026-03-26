@@ -1,0 +1,152 @@
+{
+  "manufacturers": [
+    {
+      "name": "オムロン 制御機器・FAシステム",
+      "initial": "お",
+      "listing_url": "https://www.indexpro.co.jp/distributor/search-maker?initial=%E3%81%8A",
+      "distributor_list_url": "https://www.indexpro.co.jp/distributor/list-distributor?mcid=1593",
+      "mcid": "1593"
+    },
+    {
+      "name": "オムロン 電子部品",
+      "initial": "お",
+      "listing_url": "https://www.indexpro.co.jp/distributor/search-maker?initial=%E3%81%8A",
+      "distributor_list_url": "https://www.indexpro.co.jp/distributor/list-distributor?mcid=1594",
+      "mcid": "1594"
+    },
+    {
+      "name": "キーエンス",
+      "initial": "き",
+      "listing_url": "https://www.indexpro.co.jp/distributor/search-maker?initial=%E3%81%8D",
+      "distributor_list_url": "https://www.indexpro.co.jp/distributor/list-distributor?mcid=894",
+      "mcid": "894"
+    }
+  ],
+  "distributors": [
+    {
+      "name": "オムロン関西制御機器",
+      "initial": "お",
+      "did": "774",
+      "source_category": "オンライン販売",
+      "company_url": "https://www.indexpro.co.jp/distributor/link/contact?d_web=774",
+      "location_url": "https://www.indexpro.co.jp/distributor/location?did=774",
+      "online_sales_url": "https://www.indexpro.co.jp/distributor/onlinesales?did=774",
+      "handling_makers_url": "https://www.indexpro.co.jp/distributor/handlingmaker?did=774"
+    },
+    {
+      "name": "佐鳥電機",
+      "initial": "さ",
+      "did": "58",
+      "source_category": "代理店・取扱店",
+      "company_url": "https://www.indexpro.co.jp/distributor/link/contact?d_web=58",
+      "location_url": "https://www.indexpro.co.jp/distributor/location?did=58",
+      "online_sales_url": "",
+      "handling_makers_url": "https://www.indexpro.co.jp/distributor/handlingmaker?did=58"
+    },
+    {
+      "name": "新川電機",
+      "initial": "し",
+      "did": "986",
+      "source_category": "代理店・取扱店",
+      "company_url": "https://www.indexpro.co.jp/distributor/link/contact?d_web=986",
+      "location_url": "https://www.indexpro.co.jp/distributor/location?did=986",
+      "online_sales_url": "",
+      "handling_makers_url": "https://www.indexpro.co.jp/distributor/handlingmaker?did=986"
+    }
+  ],
+  "handlings": [
+    {
+      "did": "774",
+      "distributor_name": "オムロン関西制御機器",
+      "handling_manufacturer_name": "オムロン 制御機器・FAシステム"
+    },
+    {
+      "did": "774",
+      "distributor_name": "オムロン関西制御機器",
+      "handling_manufacturer_name": "オムロン 電子部品"
+    },
+    {
+      "did": "774",
+      "distributor_name": "オムロン関西制御機器",
+      "handling_manufacturer_name": "SMC"
+    },
+    {
+      "did": "58",
+      "distributor_name": "佐鳥電機",
+      "handling_manufacturer_name": "オムロン 制御機器・FAシステム"
+    },
+    {
+      "did": "58",
+      "distributor_name": "佐鳥電機",
+      "handling_manufacturer_name": "CKD"
+    },
+    {
+      "did": "58",
+      "distributor_name": "佐鳥電機",
+      "handling_manufacturer_name": "コネテック"
+    },
+    {
+      "did": "986",
+      "distributor_name": "新川電機",
+      "handling_manufacturer_name": "オムロン 制御機器・FAシステム"
+    },
+    {
+      "did": "986",
+      "distributor_name": "新川電機",
+      "handling_manufacturer_name": "オムロン 電子部品"
+    },
+    {
+      "did": "986",
+      "distributor_name": "新川電機",
+      "handling_manufacturer_name": "グラフテック"
+    }
+  ],
+  "relations": [
+    {
+      "mcid": "1593",
+      "manufacturer_name": "オムロン 制御機器・FAシステム",
+      "distributor_name": "オムロン関西制御機器",
+      "did": "774",
+      "relation_category": "オンライン販売",
+      "company_url": "https://www.indexpro.co.jp/distributor/link/contact?d_web=774",
+      "location_url": "https://www.indexpro.co.jp/distributor/location?did=774",
+      "online_sales_url": "https://www.indexpro.co.jp/distributor/onlinesales?did=774"
+    },
+    {
+      "mcid": "1593",
+      "manufacturer_name": "オムロン 制御機器・FAシステム",
+      "distributor_name": "佐鳥電機",
+      "did": "58",
+      "relation_category": "代理店",
+      "company_url": "https://www.indexpro.co.jp/distributor/link/contact?d_web=58",
+      "location_url": "https://www.indexpro.co.jp/distributor/location?did=58",
+      "online_sales_url": ""
+    },
+    {
+      "mcid": "1593",
+      "manufacturer_name": "オムロン 制御機器・FAシステム",
+      "distributor_name": "新川電機",
+      "did": "986",
+      "relation_category": "取扱店",
+      "company_url": "https://www.indexpro.co.jp/distributor/link/contact?d_web=986",
+      "location_url": "https://www.indexpro.co.jp/distributor/location?did=986",
+      "online_sales_url": ""
+    }
+  ],
+  "raw_pages": [
+    {
+      "context": "indexPro manufacturers",
+      "url": "https://www.indexpro.co.jp/distributor/search-maker?initial=%E3%81%8A",
+      "title": "メーカー名から探す - indexPro",
+      "body": "オムロン 制御機器・FAシステム、オムロン 電子部品 などが掲載されたメーカー一覧ページ。",
+      "domain": "www.indexpro.co.jp"
+    },
+    {
+      "context": "indexPro distributors",
+      "url": "https://www.indexpro.co.jp/distributor/search-distributor?initial=%E3%81%95",
+      "title": "代理店・取扱店一覧 - indexPro",
+      "body": "佐鳥電機 などが掲載された代理店・取扱店一覧ページ。",
+      "domain": "www.indexpro.co.jp"
+    }
+  ]
+}

@@ -1440,6 +1440,18 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
     render_unified_download(result_frame, file_name="competitor_candidates_results.csv")
 
 
+def render_summary(data: dict[str, pd.DataFrame]) -> None:
+    metrics = metrics_to_map(data["metrics"])
+    validation = metrics_to_map(data["validation"])
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+    col1.metric("メーカー数", metrics.get("manufacturer_count", "-"))
+    col2.metric("代理店数", metrics.get("distributor_count", "-"))
+    col3.metric("取扱関係数", metrics.get("handling_relation_count", "-"))
+    col4.metric("未一致件数", validation.get("handling_unmatched", "-"))
+    col5.metric("最終更新日", metrics.get("generated_at", "-"))
+
+
 def render_footer() -> None:
     st.divider()
     st.caption(

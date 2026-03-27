@@ -1325,6 +1325,7 @@ def main() -> None:
         render_candidate_agent_lookup(data)
     with tab5:
         render_competitor_lookup(data)
+    render_footer()
 
 
 def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
@@ -1437,6 +1438,14 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
         link_columns={"manufacturer_page_url": "indexPro メーカーページ"},
     )
     render_unified_download(result_frame, file_name="competitor_candidates_results.csv")
+
+
+def render_footer() -> None:
+    st.divider()
+    st.caption(
+        "Copyright (c) 2026 Tomoki Hotei. "
+        "社内利用向け試作版。公開情報を元に作成しており、内容の正確性・完全性を保証するものではありません。"
+    )
 
 
 if __name__ == "__main__":

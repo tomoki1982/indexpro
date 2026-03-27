@@ -1455,6 +1455,8 @@ def format_generated_date(value: str) -> str:
     text = str(value or "").strip()
     if "T" in text:
         return text.split("T", 1)[0]
+    if " " in text:
+        return text.split(" ", 1)[0]
     return text
 
 

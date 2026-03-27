@@ -1325,7 +1325,7 @@ def main() -> None:
         render_candidate_agent_lookup(data)
     with tab5:
         render_competitor_lookup(data)
-    render_footer()
+    render_footer(data)
 
 
 def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
@@ -1444,19 +1444,29 @@ def render_summary(data: dict[str, pd.DataFrame]) -> None:
     metrics = metrics_to_map(data["metrics"])
     validation = metrics_to_map(data["validation"])
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("メーカー数", metrics.get("manufacturer_count", "-"))
     col2.metric("代理店数", metrics.get("distributor_count", "-"))
     col3.metric("取扱関係数", metrics.get("handling_relation_count", "-"))
     col4.metric("未一致件数", validation.get("handling_unmatched", "-"))
-    col5.metric("最終更新日", metrics.get("generated_at", "-"))
 
 
-def render_footer() -> None:
+def format_generated_date(value: str) -> str:
+    text = str(value or "").strip()
+    if "T" in text:
+        return text.split("T", 1)[0]
+    return text
+
+
+def render_footer(data: dict[str, pd.DataFrame]) -> None:
     st.divider()
+    metrics = metrics_to_map(data["metrics"])
+    generated_date = format_generated_date(metrics.get("generated_at", ""))
+    suffix = f" 最終更新日: {generated_date}" if generated_date else ""
     st.caption(
         "Copyright (c) 2026 Tomoki Hotei. "
         "社内利用向け試作版。公開情報を元に作成しており、内容の正確性・完全性を保証するものではありません。"
+        + suffix
     )
 
 

@@ -1,0 +1,44 @@
+name: Manual Redeploy Streamlit
+
+on:
+  workflow_dispatch:
+    inputs:
+      update_note:
+        description: "更新メモ（任意）"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Update deploy trigger
+        shell: bash
+        run: |
+          {
+            echo "last_redeploy_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo "update_note=${{ github.event.inputs.update_note }}"
+            echo "triggered_by=${{ github.actor }}"
+          } > deploy_trigger.txt
+
+      - name: Commit deploy trigger
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy_trigger.txt
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Manual redeploy trigger"
+          git push

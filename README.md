@@ -1,144 +1,40 @@
-# 仕入先検索アプリ
+# indexPro 仕入先検索アプリ
 
-現在の用途は `indexPro` の一覧収集と検証です。
+`indexPro` の公開情報をもとに、メーカー、代理店・取扱店、推定代理店、推定競合を検索する Streamlit アプリです。
 
-今後 UI に進む前提で、プロジェクトは次の2系統に分けています。
+## 現在の運用
 
-- 現在使うもの
-  - `indexPro` のメーカー一覧名取得
-  - `indexPro` の代理店・取扱店一覧名取得
-  - 代理店・取扱店ごとの取扱メーカー一覧取得
-  - 取得結果の検証
-- いったん使わないもの
-  - 過去の汎用Web収集試作
-  - オムロン単体試験の試作コード
+- 利用者は公開URLを使う
+- 更新担当者は個人PCで元データを更新する
+- 必要ならローカル確認する
+- GitHub Actions を手動実行して公開版を再反映する
 
-## 現在使うフォルダ
+公開URL:
+- [indexpro-search.streamlit.app](https://indexpro-search.streamlit.app/)
 
-```text
-仕入先検索アプリ/
-├─ app/
-│  ├─ cli.py
-│  ├─ indexpro_directory.py
-│  ├─ indexpro_directory_pipeline.py
-│  ├─ indexpro_directory_reporting.py
-│  ├─ indexpro_directory_validation.py
-│  ├─ models.py
-│  ├─ settings.py
-│  └─ storage.py
-├─ data/
-│  └─ fixtures/
-│     └─ indexpro_directory_sample.json
-├─ output/
-│  ├─ db/
-│  ├─ indexpro/
-│  │  ├─ listings/
-│  │  └─ validation/
-│  └─ trials/
-├─ tests/
-│  ├─ test_indexpro_directory_fixture.py
-│  └─ test_indexpro_directory_parser.py
-├─ README.md
-└─ requirements.txt
-```
+## 主なファイル
 
-## 使わないものの退避先
+- UI: `app/ui.py`
+- 推定代理店ロジック: `app/agent_inference.py`
+- 推定競合ロジック: `app/competitor_inference.py`
+- 起動バッチ: `batch/run_ui.bat`
+- GitHub反映バッチ: `batch/push_to_github.bat`
+- 更新手順書: `docs/update_runbook.md`
 
-```text
-仕入先検索アプリ/
-├─ app/archive/
-├─ data/archive/
-└─ tests/archive/
-```
-
-ここには過去の試作コードを退避しています。今後の UI 開発では基本的に見なくて大丈夫です。
-
-## 実行方法
-
-Anaconda Prompt を前提にしています。
+## ローカル起動
 
 ```powershell
 cd /d C:\Users\gotta\.codex\codexアプリ\仕入先検索アプリ
 pip install -r requirements.txt
-```
-
-### 1. indexPro 一覧収集
-
-```powershell
-python -m app.cli --mode indexpro-directory-live --crawl-delay 0.2
-```
-
-### 2. indexPro 一覧検証
-
-```powershell
-python -m app.cli --mode indexpro-directory-validate
-```
-
-### 3. fixture で軽く確認
-
-```powershell
-python -m app.cli --mode indexpro-directory-fixture
-```
-
-## 出力先
-
-### 一覧収集結果
-
-`output/indexpro/listings/`
-
-- `indexpro_directory_manufacturers.csv`
-- `indexpro_directory_distributors.csv`
-- `indexpro_directory_handlings.csv`
-- `indexpro_directory_metrics.csv`
-
-### 検証結果
-
-`output/indexpro/validation/`
-
-- `indexpro_validation_summary.csv`
-- `indexpro_validation_duplicate_dids.csv`
-- `indexpro_validation_name_variants.csv`
-- `indexpro_validation_match_metrics.csv`
-- `indexpro_validation_unmatched_handlings.csv`
-
-### DB
-
-`output/db/supplier_flow.db`
-
-## 現在の確認ポイント
-
-### 一覧収集が成功しているか
-
-`output/indexpro/listings/indexpro_directory_metrics.csv` を見ます。
-
-- `manufacturer_count`
-- `distributor_count`
-- `handling_relation_count`
-
-### 検証が成功しているか
-
-`output/indexpro/validation/indexpro_validation_summary.csv` を見ます。
-
-- `duplicate_did_groups`
-- `distributor_name_variant_groups`
-- `handling_unmatched`
-
-## 次のステップ
-
-次は UI を使います。
-
-最小UIは次の2画面です。
-
-- メーカーから代理店・取扱店一覧を検索
-- 代理店・取扱店から取扱メーカー一覧を検索
-
-## UI 起動
-
-```powershell
 streamlit run app/ui.py
 ```
 
-起動後にブラウザで、次を確認できます。
+## 更新の流れ
 
-- メーカー名を入れて、そのメーカーを扱う代理店・取扱店を一覧表示
-- 代理店・取扱店名を入れて、その会社の取扱メーカー一覧を表示
+1. Googleスプレッドシートの元データを更新
+2. 必要なら `batch/run_ui.bat` でローカル確認
+3. コード修正がある場合だけ `batch/push_to_github.bat`
+4. GitHub Actions の `Manual Redeploy Streamlit` を実行
+5. 公開URLで確認
+
+詳細は `docs/update_runbook.md` を参照してください。

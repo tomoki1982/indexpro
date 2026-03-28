@@ -8,8 +8,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 OUTPUT_DIR = BASE_DIR / "output"
 DB_DIR = OUTPUT_DIR / "db"
-LEGACY_DIR = OUTPUT_DIR / "legacy"
-TRIALS_DIR = OUTPUT_DIR / "trials"
 INDEXPRO_DIR = OUTPUT_DIR / "indexpro"
 INDEXPRO_LISTINGS_DIR = INDEXPRO_DIR / "listings"
 INDEXPRO_VALIDATION_DIR = INDEXPRO_DIR / "validation"
@@ -47,8 +45,6 @@ class AppSettings:
 def ensure_output_dirs() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     DB_DIR.mkdir(parents=True, exist_ok=True)
-    LEGACY_DIR.mkdir(parents=True, exist_ok=True)
-    TRIALS_DIR.mkdir(parents=True, exist_ok=True)
     INDEXPRO_DIR.mkdir(parents=True, exist_ok=True)
     INDEXPRO_LISTINGS_DIR.mkdir(parents=True, exist_ok=True)
     INDEXPRO_VALIDATION_DIR.mkdir(parents=True, exist_ok=True)

@@ -29,6 +29,14 @@ if errorlevel 1 (
 )
 
 echo.
+echo Syncing with GitHub...
+git fetch origin
+if errorlevel 1 goto :error
+
+git pull --rebase origin main
+if errorlevel 1 goto :error
+
+echo.
 echo Pushing to GitHub...
 git push
 if errorlevel 1 goto :error

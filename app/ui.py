@@ -10,6 +10,7 @@ try:
     from .agent_inference import get_candidate_agents_by_manufacturer_and_retailer
     from .competitor_inference import get_competitor_candidates
     from .settings import (
+        BASE_DIR,
         INDEXPRO_DIRECTORY_DISTRIBUTORS_SOURCE,
         INDEXPRO_DIRECTORY_HANDLINGS_SOURCE,
         INDEXPRO_DIRECTORY_MANUFACTURERS_SOURCE,
@@ -28,6 +29,7 @@ except ImportError:
     from app.agent_inference import get_candidate_agents_by_manufacturer_and_retailer
     from app.competitor_inference import get_competitor_candidates
     from app.settings import (
+        BASE_DIR,
         INDEXPRO_DIRECTORY_DISTRIBUTORS_SOURCE,
         INDEXPRO_DIRECTORY_HANDLINGS_SOURCE,
         INDEXPRO_DIRECTORY_MANUFACTURERS_SOURCE,
@@ -51,6 +53,7 @@ RELATIONS_CSV = INDEXPRO_DIRECTORY_RELATIONS_SOURCE
 METRICS_CSV = INDEXPRO_DIRECTORY_METRICS_SOURCE
 VALIDATION_SUMMARY_CSV = INDEXPRO_VALIDATION_DIR / "indexpro_validation_summary.csv"
 LABELS_CSV = INDEXPRO_LISTINGS_DIR / "indexpro_directory_labels.csv"
+DEPLOY_TRIGGER_FILE = BASE_DIR / "deploy_trigger.txt"
 
 CATEGORY_FILTER_OPTIONS = ["代理店", "取扱店", "オンライン販売"]
 MANUAL_CATEGORY_OPTIONS = ["未設定", *CATEGORY_FILTER_OPTIONS]
@@ -1460,11 +1463,28 @@ def format_generated_date(value: str) -> str:
     return text
 
 
+@st.cache_data(show_spinner=False)
+def load_deploy_trigger() -> dict[str, str]:
+    if not DEPLOY_TRIGGER_FILE.exists():
+        return {}
+
+    values: dict[str, str] = {}
+    for line in DEPLOY_TRIGGER_FILE.read_text(encoding="utf-8").splitlines():
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip()
+    return values
+
+
 def render_footer(data: dict[str, pd.DataFrame]) -> None:
     st.divider()
     metrics = metrics_to_map(data["metrics"])
+    deploy_info = load_deploy_trigger()
+    deploy_date = format_generated_date(deploy_info.get("last_redeploy_utc", ""))
     generated_date = format_generated_date(metrics.get("generated_at", ""))
-    suffix = f" 最終更新日: {generated_date}" if generated_date else ""
+    display_date = deploy_date or generated_date
+    suffix = f" 最終更新日: {display_date}" if display_date else ""
     st.caption(
         "Copyright (c) 2026 Tomoki Hotei. "
         "社内利用向け試作版。公開情報を元に作成しており、内容の正確性・完全性を保証するものではありません。"

@@ -54,6 +54,9 @@ METRICS_CSV = INDEXPRO_DIRECTORY_METRICS_SOURCE
 VALIDATION_SUMMARY_CSV = INDEXPRO_VALIDATION_DIR / "indexpro_validation_summary.csv"
 LABELS_CSV = INDEXPRO_LISTINGS_DIR / "indexpro_directory_labels.csv"
 DEPLOY_TRIGGER_FILE = BASE_DIR / "deploy_trigger.txt"
+LOGIN_ID = "MTB2026"
+LOGIN_STATE_KEY = "app_authenticated"
+LOGIN_INPUT_KEY = "login_id_input"
 
 CATEGORY_FILTER_OPTIONS = ["代理店", "取扱店", "オンライン販売"]
 MANUAL_CATEGORY_OPTIONS = ["未設定", *CATEGORY_FILTER_OPTIONS]
@@ -218,6 +221,28 @@ def save_labels(frame: pd.DataFrame) -> None:
     output.to_csv(LABELS_CSV, index=False, encoding="utf-8-sig")
     load_labels.clear()
     load_app_data.clear()
+
+
+def require_login() -> None:
+    if st.session_state.get(LOGIN_STATE_KEY):
+        return
+
+    st.title("indexPro 仕入先検索")
+    st.subheader("ログイン")
+    st.caption("アプリを開くにはログインIDを入力してください。")
+
+    with st.form("login_form", clear_on_submit=False):
+        login_id = st.text_input("ログインID", key=LOGIN_INPUT_KEY)
+        submitted = st.form_submit_button("ログイン")
+
+    if submitted:
+        if login_id.strip() == LOGIN_ID:
+            st.session_state[LOGIN_STATE_KEY] = True
+            st.rerun()
+        else:
+            st.error("ログインIDが一致しません。")
+
+    st.stop()
 
 
 def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
@@ -397,6 +422,8 @@ def main() -> None:
 
     st.title("indexPro 仕入先検索")
     st.caption("企業検索、メーカー検索、代理店・取扱店検索を1つの画面で確認できます。")
+
+    require_login()
 
     missing = find_missing_files()
     if missing:

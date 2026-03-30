@@ -429,6 +429,8 @@ def main() -> None:
 
     require_login()
 
+    require_login()
+
     missing = find_missing_files()
     if missing:
         st.error("必要なCSVが見つかりません。先に一覧収集を実行してください。")

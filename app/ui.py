@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -58,10 +58,10 @@ LOGIN_ID = "MTB2026"
 LOGIN_STATE_KEY = "app_authenticated"
 LOGIN_INPUT_KEY = "login_id_input"
 
-CATEGORY_FILTER_OPTIONS = ["莉｣逅・ｺ・, "蜿匁桶蠎・, "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ"]
-MANUAL_CATEGORY_OPTIONS = ["譛ｪ險ｭ螳・, *CATEGORY_FILTER_OPTIONS]
-REVIEW_STATUS_OPTIONS = ["譛ｪ險ｭ螳・, "隕∫｢ｺ隱・, "譛牙鴨蛟呵｣・, "譌｢蟄伜叙蠑輔≠繧・]
-COMPANY_TYPE_OPTIONS = ["繝｡繝ｼ繧ｫ繝ｼ", "莉｣逅・ｺ・, "蜿匁桶蠎・, "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ"]
+CATEGORY_FILTER_OPTIONS = ["代理店", "取扱店", "オンライン販売"]
+MANUAL_CATEGORY_OPTIONS = ["未設定", *CATEGORY_FILTER_OPTIONS]
+REVIEW_STATUS_OPTIONS = ["未設定", "要確認", "有力候補", "既存取引あり"]
+COMPANY_TYPE_OPTIONS = ["メーカー", "代理店", "取扱店", "オンライン販売"]
 
 UNIFIED_EXPORT_COLUMNS = [
     "search_type",
@@ -154,9 +154,9 @@ def load_labels() -> pd.DataFrame:
     if "entity_name" not in frame.columns:
         frame["entity_name"] = frame.get("distributor_name", "")
     if "classification" not in frame.columns:
-        frame["classification"] = "譛ｪ險ｭ螳・
+        frame["classification"] = "未設定"
     if "review_status" not in frame.columns:
-        frame["review_status"] = "譛ｪ險ｭ螳・
+        frame["review_status"] = "未設定"
     if "memo" not in frame.columns:
         frame["memo"] = ""
 
@@ -191,22 +191,22 @@ def normalize_manual_category(value: object) -> str:
     text = str(value).strip() if value is not None else ""
     if text in MANUAL_CATEGORY_OPTIONS:
         return text
-    if text in {"莉｣逅・ｺ励・蜿匁桶蠎・, "莉｣逅・ｺ・}:
-        return "莉｣逅・ｺ・
-    if text == "蜿匁桶蠎・:
-        return "蜿匁桶蠎・
-    if text in {"繧ｪ繝ｳ繝ｩ繧､繝ｳ", "Web", "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ"}:
-        return "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ"
-    return "譛ｪ險ｭ螳・
+    if text in {"代理店・取扱店", "代理店"}:
+        return "代理店"
+    if text == "取扱店":
+        return "取扱店"
+    if text in {"オンライン", "Web", "オンライン販売"}:
+        return "オンライン販売"
+    return "未設定"
 
 
 def normalize_review_status(value: object) -> str:
     text = str(value).strip() if value is not None else ""
-    return text if text in REVIEW_STATUS_OPTIONS else "譛ｪ險ｭ螳・
+    return text if text in REVIEW_STATUS_OPTIONS else "未設定"
 
 
 def default_category_from_source(source_category: object) -> str:
-    return "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ" if str(source_category).strip() == "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ" else "譛ｪ險ｭ螳・
+    return "オンライン販売" if str(source_category).strip() == "オンライン販売" else "未設定"
 
 
 def entity_key(entity_type: str, entity_name: str) -> str:
@@ -227,26 +227,26 @@ def require_login() -> None:
     if st.session_state.get(LOGIN_STATE_KEY):
         return
 
-    st.title("indexPro 莉募・蜈域､懃ｴ｢")
-    st.subheader("繝ｭ繧ｰ繧､繝ｳ")
-    st.caption("繧｢繝励Μ繧帝幕縺上↓縺ｯ繝ｭ繧ｰ繧､繝ｳID繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲・)
+    st.title("indexPro 仕入先検索")
+    st.subheader("ログイン")
+    st.caption("アプリを開くにはログインIDを入力してください。")
 
     with st.form("login_form", clear_on_submit=False):
-        login_id = st.text_input("繝ｭ繧ｰ繧､繝ｳID", key=LOGIN_INPUT_KEY)
-        submitted = st.form_submit_button("繝ｭ繧ｰ繧､繝ｳ")
+        login_id = st.text_input("ログインID", key=LOGIN_INPUT_KEY)
+        submitted = st.form_submit_button("ログイン")
 
     if submitted:
         if login_id.strip() == LOGIN_ID:
             st.session_state[LOGIN_STATE_KEY] = True
             st.rerun()
         else:
-            st.error("繝ｭ繧ｰ繧､繝ｳID縺御ｸ閾ｴ縺励∪縺帙ｓ縲・)
+            st.error("ログインIDが一致しません。")
 
     st.stop()
 
 
 def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
-    st.subheader("繝｡繝ｼ繧ｫ繝ｼ ﾃ・蜿匁桶蠎励°繧画耳螳壻ｻ｣逅・ｺ励ｒ謗｢縺・)
+    st.subheader("メーカー × 取扱店から推定代理店を探す")
 
     manufacturers = build_manufacturer_metadata(data["manufacturers"].copy(), data["labels"])
     manufacturer_options = [""] + sorted(
@@ -258,7 +258,7 @@ def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
     if not relations.empty:
         retailer_options += sorted(
             relations.loc[
-                relations["relation_category"].astype(str) == "蜿匁桶蠎・,
+                relations["relation_category"].astype(str) == "取扱店",
                 "distributor_name",
             ]
             .dropna()
@@ -270,40 +270,40 @@ def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
     input_col1, input_col2, button_col = st.columns([3, 3, 1])
     with input_col1:
         manufacturer_query = st.selectbox(
-            "繝｡繝ｼ繧ｫ繝ｼ蜷・,
+            "メーカー名",
             manufacturer_options,
             index=0,
             key="inference_manufacturer_query",
-            format_func=lambda value: value or "驕ｸ謚槭＠縺ｦ縺上□縺輔＞",
+            format_func=lambda value: value or "選択してください",
         )
     with input_col2:
         retailer_query = st.selectbox(
-            "蜿匁桶蠎怜錐",
+            "取扱店名",
             retailer_options,
             index=0,
             key="inference_retailer_query",
-            format_func=lambda value: value or "驕ｸ謚槭＠縺ｦ縺上□縺輔＞",
+            format_func=lambda value: value or "選択してください",
         )
     with button_col:
         st.write("")
-        if st.button("繧ｯ繝ｪ繧｢", key="inference_clear"):
+        if st.button("クリア", key="inference_clear"):
             reset_form(INFERENCE_STATE_KEYS)
             st.rerun()
 
     manufacturer_query = str(manufacturer_query).strip()
     retailer_query = str(retailer_query).strip()
-    search_clicked = st.button("讀懃ｴ｢", key="inference_search")
+    search_clicked = st.button("検索", key="inference_search")
 
     if not manufacturer_query and not retailer_query:
-        st.info("繝｡繝ｼ繧ｫ繝ｼ蜷阪→蜿匁桶蠎怜錐繧帝∈謚槭☆繧九→縲∽ｸ｡譁ｹ縺ｫ髢｢菫ゅ＠縺昴≧縺ｪ莉｣逅・ｺ怜呵｣懊ｒ陦ｨ遉ｺ縺励∪縺吶・)
+        st.info("メーカー名と取扱店名を選択すると、両方に関係しそうな代理店候補を表示します。")
         return
 
     if not manufacturer_query or not retailer_query:
-        st.info("繝｡繝ｼ繧ｫ繝ｼ蜷阪→蜿匁桶蠎怜錐縺ｮ荳｡譁ｹ繧帝∈謚槭＠縺ｦ縺上□縺輔＞縲・)
+        st.info("メーカー名と取扱店名の両方を選択してください。")
         return
 
     if not search_clicked:
-        st.caption("讀懃ｴ｢繝懊ち繝ｳ繧呈款縺吶→縲∝叙謇ｱ蠎怜・縺ｮ髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ縺ｨ繝｡繝ｼ繧ｫ繝ｼ逶ｴ荳九・莉｣逅・ｺ励ｒ遯√″蜷医ｏ縺帙※蛟呵｣懊ｒ蜃ｺ縺励∪縺吶・)
+        st.caption("検索ボタンを押すと、取扱店側の関連メーカーとメーカー直下の代理店を突き合わせて候補を出します。")
         return
 
     results = get_candidate_agents_by_manufacturer_and_retailer(
@@ -314,22 +314,22 @@ def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
     )
 
     if not results:
-        st.warning("謗ｨ螳壻ｻ｣逅・ｺ怜呵｣懊・0莉ｶ縺ｧ縺励◆縲よ擅莉ｶ繧貞､峨∴縺ｦ蜀榊ｺｦ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・)
+        st.warning("推定代理店候補は0件でした。条件を変えて再度確認してください。")
         return
 
     distributors = build_distributor_metadata(data["distributors"].copy(), data["labels"])
     result_frame = pd.DataFrame(
         [
             {
-                "鬆・ｽ・: item.rank,
-                "莉｣逅・ｺ怜錐": item.agent_name,
-                "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢": f"{item.score:.2f}",
+                "順位": item.rank,
+                "代理店名": item.agent_name,
+                "基本スコア": f"{item.score:.2f}",
                 "score_value": item.score,
-                "繝｡繝ｼ繧ｫ繝ｼ縺ｨ縺ｮ逶ｴ謗･謗･邯壽怏辟｡": "true" if item.has_direct_connection else "false",
-                "蜿匁桶蠎怜・髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ謨ｰ": item.retailer_related_manufacturer_count,
-                "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ莉ｶ謨ｰ": item.matched_related_manufacturer_count,
-                "莉｣逅・ｺ礼ｷ丞叙謇ｱ繝｡繝ｼ繧ｫ繝ｼ謨ｰ": item.agent_total_handling_count,
-                "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ荳隕ｧ": ", ".join(item.evidence_manufacturers),
+                "メーカーとの直接接続有無": "true" if item.has_direct_connection else "false",
+                "取扱店側関連メーカー数": item.retailer_related_manufacturer_count,
+                "関連メーカー件数": item.matched_related_manufacturer_count,
+                "代理店総取扱メーカー数": item.agent_total_handling_count,
+                "関連メーカー一覧": ", ".join(item.evidence_manufacturers),
             }
             for item in results
         ]
@@ -348,25 +348,25 @@ def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
             ]
         ].drop_duplicates(subset=["distributor_name"]),
         how="left",
-        left_on="莉｣逅・ｺ怜錐",
+        left_on="代理店名",
         right_on="distributor_name",
     )
     result_frame["classification"] = result_frame["classification"].fillna("")
     result_frame["review_status"] = result_frame["review_status"].fillna("")
     result_frame["memo"] = result_frame["memo"].fillna("")
 
-    st.write(f"謗ｨ螳壻ｻ｣逅・ｺ怜呵｣・ {len(result_frame)}莉ｶ")
+    st.write(f"推定代理店候補: {len(result_frame)}件")
     render_link_table(
         result_frame[
             [
-                "鬆・ｽ・,
-                "莉｣逅・ｺ怜錐",
-                "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢",
-                "繝｡繝ｼ繧ｫ繝ｼ縺ｨ縺ｮ逶ｴ謗･謗･邯壽怏辟｡",
-                "蜿匁桶蠎怜・髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ謨ｰ",
-                "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ莉ｶ謨ｰ",
-                "莉｣逅・ｺ礼ｷ丞叙謇ｱ繝｡繝ｼ繧ｫ繝ｼ謨ｰ",
-                "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ荳隕ｧ",
+                "順位",
+                "代理店名",
+                "基本スコア",
+                "メーカーとの直接接続有無",
+                "取扱店側関連メーカー数",
+                "関連メーカー件数",
+                "代理店総取扱メーカー数",
+                "関連メーカー一覧",
                 "company_url",
                 "location_url",
                 "online_sales_url",
@@ -374,23 +374,23 @@ def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
             ]
         ],
         link_columns={
-            "company_url": "莨夂､ｾURL",
-            "location_url": "蝟ｶ讌ｭ諡轤ｹURL",
-            "online_sales_url": "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲURL",
-            "handling_makers_url": "蜿匁桶繝｡繝ｼ繧ｫ繝ｼURL",
+            "company_url": "会社URL",
+            "location_url": "営業拠点URL",
+            "online_sales_url": "オンライン販売URL",
+            "handling_makers_url": "取扱メーカーURL",
         },
     )
 
     export_frame = result_frame[
         [
-            "鬆・ｽ・,
-            "莉｣逅・ｺ怜錐",
-            "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢",
-            "繝｡繝ｼ繧ｫ繝ｼ縺ｨ縺ｮ逶ｴ謗･謗･邯壽怏辟｡",
-            "蜿匁桶蠎怜・髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ謨ｰ",
-            "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ莉ｶ謨ｰ",
-            "莉｣逅・ｺ礼ｷ丞叙謇ｱ繝｡繝ｼ繧ｫ繝ｼ謨ｰ",
-            "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ荳隕ｧ",
+            "順位",
+            "代理店名",
+            "基本スコア",
+            "メーカーとの直接接続有無",
+            "取扱店側関連メーカー数",
+            "関連メーカー件数",
+            "代理店総取扱メーカー数",
+            "関連メーカー一覧",
             "classification",
             "review_status",
             "memo",
@@ -401,13 +401,13 @@ def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
         ]
     ].rename(
         columns={
-            "classification": "蛹ｺ蛻・,
-            "review_status": "繧ｹ繝・・繧ｿ繧ｹ",
-            "memo": "繝｡繝｢",
-            "company_url": "莨夂､ｾURL",
-            "location_url": "蝟ｶ讌ｭ諡轤ｹURL",
-            "online_sales_url": "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲURL",
-            "handling_makers_url": "蜿匁桶繝｡繝ｼ繧ｫ繝ｼURL",
+            "classification": "区分",
+            "review_status": "ステータス",
+            "memo": "メモ",
+            "company_url": "会社URL",
+            "location_url": "営業拠点URL",
+            "online_sales_url": "オンライン販売URL",
+            "handling_makers_url": "取扱メーカーURL",
         }
     )
     render_unified_download(export_frame, file_name="candidate_agents_results.csv")
@@ -415,34 +415,29 @@ def render_candidate_agent_lookup(data: dict[str, pd.DataFrame]) -> None:
 
 def main() -> None:
     st.set_page_config(
-        page_title="indexPro 莉募・蜈域､懃ｴ｢",
+        page_title="indexPro 仕入先検索",
         page_icon=":material/account_tree:",
         layout="wide",
     )
 
-    st.title("indexPro 莉募・蜈域､懃ｴ｢")
-    st.caption("莨∵･ｭ讀懃ｴ｢縲√Γ繝ｼ繧ｫ繝ｼ讀懃ｴ｢縲∽ｻ｣逅・ｺ励・蜿匁桶蠎玲､懃ｴ｢繧・縺､縺ｮ逕ｻ髱｢縺ｧ遒ｺ隱阪〒縺阪∪縺吶・)
+    st.title("indexPro 仕入先検索")
+    st.caption("企業検索、メーカー検索、代理店・取扱店検索を1つの画面で確認できます。")
 
     require_login()
 
-    require_login()
-
-    require_login()
-
-    require_login()
-
-    require_login()
     missing = find_missing_files()
     if missing:
-        st.error("蠢・ｦ√↑CSV縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縲ょ・縺ｫ荳隕ｧ蜿朱寔繧貞ｮ溯｡後＠縺ｦ縺上□縺輔＞縲・)
+        st.error("必要なCSVが見つかりません。先に一覧収集を実行してください。")
         for path in missing:
             st.code(str(path))
         st.stop()
 
+    require_login()
+
     data = load_app_data()
     render_summary(data)
 
-    tab1, tab2, tab3 = st.tabs(["莨∵･ｭ讀懃ｴ｢", "繝｡繝ｼ繧ｫ繝ｼ讀懃ｴ｢", "莉｣逅・ｺ励・蜿匁桶蠎玲､懃ｴ｢"])
+    tab1, tab2, tab3 = st.tabs(["企業検索", "メーカー検索", "代理店・取扱店検索"])
     with tab1:
         render_company_lookup(data)
     with tab2:
@@ -473,10 +468,10 @@ def render_summary(data: dict[str, pd.DataFrame]) -> None:
     validation = metrics_to_map(data["validation"])
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("繝｡繝ｼ繧ｫ繝ｼ謨ｰ", metrics.get("manufacturer_count", "-"))
-    col2.metric("莉｣逅・ｺ玲焚", metrics.get("distributor_count", "-"))
-    col3.metric("蜿匁桶髢｢菫よ焚", metrics.get("handling_relation_count", "-"))
-    col4.metric("譛ｪ荳閾ｴ莉ｶ謨ｰ", validation.get("handling_unmatched", "-"))
+    col1.metric("メーカー数", metrics.get("manufacturer_count", "-"))
+    col2.metric("代理店数", metrics.get("distributor_count", "-"))
+    col3.metric("取扱関係数", metrics.get("handling_relation_count", "-"))
+    col4.metric("未一致件数", validation.get("handling_unmatched", "-"))
 
 
 def metrics_to_map(frame: pd.DataFrame) -> dict[str, str]:
@@ -505,8 +500,8 @@ def apply_company_labels(frame: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFr
     output["entity_key"] = output.apply(lambda row: entity_key(row["entity_type"], row["entity_name"]), axis=1)
 
     if labels.empty:
-        output["classification"] = "譛ｪ險ｭ螳・
-        output["review_status"] = "譛ｪ險ｭ螳・
+        output["classification"] = "未設定"
+        output["review_status"] = "未設定"
         output["memo"] = ""
     else:
         labels = labels.copy()
@@ -516,8 +511,8 @@ def apply_company_labels(frame: pd.DataFrame, labels: pd.DataFrame) -> pd.DataFr
             how="left",
             on="entity_key",
         )
-        output["classification"] = output["classification"].fillna("譛ｪ險ｭ螳・)
-        output["review_status"] = output["review_status"].fillna("譛ｪ險ｭ螳・)
+        output["classification"] = output["classification"].fillna("未設定")
+        output["review_status"] = output["review_status"].fillna("未設定")
         output["memo"] = output["memo"].fillna("")
 
     output["classification"] = output["classification"].apply(normalize_manual_category)
@@ -531,11 +526,11 @@ def build_distributor_metadata(distributors: pd.DataFrame, labels: pd.DataFrame)
     frame["entity_type"] = "distributor"
     frame["entity_name"] = frame["distributor_name"]
     if "source_category" not in frame.columns:
-        frame["source_category"] = "莉｣逅・ｺ励・蜿匁桶蠎・
+        frame["source_category"] = "代理店・取扱店"
     frame = apply_company_labels(frame, labels)
     frame["display_category"] = frame.apply(
         lambda row: row["classification"]
-        if row["classification"] != "譛ｪ險ｭ螳・
+        if row["classification"] != "未設定"
         else default_category_from_source(row.get("source_category", "")),
         axis=1,
     )
@@ -563,10 +558,10 @@ def build_company_index(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         {
             "entity_type": "manufacturer",
             "entity_name": manufacturers["manufacturer_name"],
-            "company_type": "繝｡繝ｼ繧ｫ繝ｼ",
+            "company_type": "メーカー",
             "manufacturer_name": manufacturers["manufacturer_name"],
             "distributor_name": "",
-            "relation_category": "繝｡繝ｼ繧ｫ繝ｼ",
+            "relation_category": "メーカー",
             "classification": manufacturers["classification"],
             "review_status": manufacturers["review_status"],
             "memo": manufacturers["memo"],
@@ -583,7 +578,7 @@ def build_company_index(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         {
             "entity_type": "distributor",
             "entity_name": distributors["distributor_name"],
-            "company_type": distributors["display_category"].replace("譛ｪ險ｭ螳・, "莉｣逅・ｺ励・蜿匁桶蠎・),
+            "company_type": distributors["display_category"].replace("未設定", "代理店・取扱店"),
             "manufacturer_name": "",
             "distributor_name": distributors["distributor_name"],
             "relation_category": distributors["display_category"],
@@ -619,51 +614,51 @@ def render_unified_download(frame: pd.DataFrame, *, file_name: str) -> None:
     if frame.empty:
         return
     csv_bytes = frame.to_csv(index=False).encode("utf-8-sig")
-    st.download_button("縺薙・邨先棡繧辰SV繝繧ｦ繝ｳ繝ｭ繝ｼ繝・, data=csv_bytes, file_name=file_name, mime="text/csv")
+    st.download_button("この結果をCSVダウンロード", data=csv_bytes, file_name=file_name, mime="text/csv")
 
 
 def render_company_lookup(data: dict[str, pd.DataFrame]) -> None:
-    st.subheader("莨∵･ｭ繧定・逕ｱ讀懃ｴ｢縺吶ｋ")
+    st.subheader("企業を自由検索する")
     controls_col, button_col = st.columns([5, 1])
     with controls_col:
-        query = st.text_input("莨∵･ｭ蜷・, placeholder="萓・ 譌･莨・/ 譚ｱ闃昴ユ繝・け / 繧｢繧､繝九ャ繧ｯ繧ｹ", key="company_query")
+        query = st.text_input("企業名", placeholder="例: 日伝 / 東芝テック / アイニックス", key="company_query")
     with button_col:
         st.write("")
-        if st.button("繧ｯ繝ｪ繧｢", key="company_clear"):
+        if st.button("クリア", key="company_clear"):
             reset_form(COMPANY_STATE_KEYS)
             st.rerun()
 
     if not query:
-        st.info("繝｡繝ｼ繧ｫ繝ｼ繝ｻ莉｣逅・ｺ励・蜿匁桶蠎励・繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ繧偵∪縺ｨ繧√※讀懃ｴ｢縺ｧ縺阪∪縺吶・)
+        st.info("メーカー・代理店・取扱店・オンライン販売をまとめて検索できます。")
         return
 
     company_index = build_company_index(data)
     hits = company_index[company_index["entity_name"].str.contains(query, case=False, na=False)].copy()
     company_type_filter = st.selectbox(
-        "遞ｮ蛻･縺ｧ邨槭ｊ霎ｼ縺ｿ",
-        ["縺吶∋縺ｦ", *COMPANY_TYPE_OPTIONS],
+        "種別で絞り込み",
+        ["すべて", *COMPANY_TYPE_OPTIONS],
         key="company_type_filter",
     )
-    if company_type_filter != "縺吶∋縺ｦ":
+    if company_type_filter != "すべて":
         hits = hits[hits["company_type"] == company_type_filter].copy()
 
-    st.write(f"莨∵･ｭ蛟呵｣・ {len(hits)}莉ｶ")
+    st.write(f"企業候補: {len(hits)}件")
     display_frame = hits.rename(
         columns={
-            "entity_name": "莨∵･ｭ蜷・,
-            "company_type": "遞ｮ蛻･",
-            "review_status": "繧ｹ繝・・繧ｿ繧ｹ",
-            "memo": "繝｡繝｢",
+            "entity_name": "企業名",
+            "company_type": "種別",
+            "review_status": "ステータス",
+            "memo": "メモ",
         }
     )
     render_link_table(
         display_frame[
             [
-                "莨∵･ｭ蜷・,
+                "企業名",
                 "initial",
-                "遞ｮ蛻･",
-                "繧ｹ繝・・繧ｿ繧ｹ",
-                "繝｡繝｢",
+                "種別",
+                "ステータス",
+                "メモ",
                 "company_url",
                 "location_url",
                 "online_sales_url",
@@ -672,33 +667,33 @@ def render_company_lookup(data: dict[str, pd.DataFrame]) -> None:
             ]
         ],
         link_columns={
-            "company_url": "莨夂､ｾURL",
-            "location_url": "蝟ｶ讌ｭ諡轤ｹURL",
-            "online_sales_url": "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲURL",
-            "handling_makers_url": "蜿匁桶繝｡繝ｼ繧ｫ繝ｼURL",
-            "manufacturer_page_url": "indexPro 繝｡繝ｼ繧ｫ繝ｼ繝壹・繧ｸ",
+            "company_url": "会社URL",
+            "location_url": "営業拠点URL",
+            "online_sales_url": "オンライン販売URL",
+            "handling_makers_url": "取扱メーカーURL",
+            "manufacturer_page_url": "indexPro メーカーページ",
         },
     )
     render_company_metadata_editor(hits, data["labels"])
     render_unified_download(
-        build_unified_export(hits, search_type="莨∵･ｭ讀懃ｴ｢", search_query=query),
+        build_unified_export(hits, search_type="企業検索", search_query=query),
         file_name="company_search_results.csv",
     )
 
 
 def render_manufacturer_lookup(data: dict[str, pd.DataFrame]) -> None:
-    st.subheader("繝｡繝ｼ繧ｫ繝ｼ縺九ｉ莉｣逅・ｺ励・蜿匁桶蠎励ｒ謗｢縺・)
+    st.subheader("メーカーから代理店・取扱店を探す")
     controls_col, button_col = st.columns([5, 1])
     with controls_col:
-        query = st.text_input("繝｡繝ｼ繧ｫ繝ｼ蜷・, placeholder="萓・ 繧ｪ繝繝ｭ繝ｳ / 繧ｭ繝ｼ繧ｨ繝ｳ繧ｹ / SMC", key="manufacturer_query")
+        query = st.text_input("メーカー名", placeholder="例: オムロン / キーエンス / SMC", key="manufacturer_query")
     with button_col:
         st.write("")
-        if st.button("繧ｯ繝ｪ繧｢", key="manufacturer_clear"):
+        if st.button("クリア", key="manufacturer_clear"):
             reset_form(MANUFACTURER_STATE_KEYS)
             st.rerun()
 
     if not query:
-        st.info("繝｡繝ｼ繧ｫ繝ｼ蜷阪ｒ蜈･蜉帙☆繧九→縲∝呵｣懊→髢｢騾｣縺吶ｋ莉｣逅・ｺ励・蜿匁桶蠎励ｒ陦ｨ遉ｺ縺励∪縺吶・)
+        st.info("メーカー名を入力すると、候補と関連する代理店・取扱店を表示します。")
         return
 
     manufacturers = build_manufacturer_metadata(data["manufacturers"].copy(), data["labels"])
@@ -706,17 +701,17 @@ def render_manufacturer_lookup(data: dict[str, pd.DataFrame]) -> None:
     relations = data["relations"].copy()
     manufacturer_hits = manufacturers[manufacturers["manufacturer_name"].str.contains(query, case=False, na=False)].copy()
 
-    st.write(f"繝｡繝ｼ繧ｫ繝ｼ蛟呵｣・ {len(manufacturer_hits)}莉ｶ")
+    st.write(f"メーカー候補: {len(manufacturer_hits)}件")
     render_link_table(
-        manufacturer_hits.rename(columns={"manufacturer_name": "繝｡繝ｼ繧ｫ繝ｼ蜷・})[
-            ["繝｡繝ｼ繧ｫ繝ｼ蜷・, "initial", "manufacturer_page_url", "review_status", "memo"]
+        manufacturer_hits.rename(columns={"manufacturer_name": "メーカー名"})[
+            ["メーカー名", "initial", "manufacturer_page_url", "review_status", "memo"]
         ],
-        link_columns={"manufacturer_page_url": "indexPro 繝｡繝ｼ繧ｫ繝ｼ繝壹・繧ｸ"},
+        link_columns={"manufacturer_page_url": "indexPro メーカーページ"},
     )
     if manufacturer_hits.empty:
         return
 
-    selected = st.selectbox("蟇ｾ雎｡繝｡繝ｼ繧ｫ繝ｼ繧帝∈謚・, manufacturer_hits["manufacturer_name"].tolist(), key="manufacturer_selected")
+    selected = st.selectbox("対象メーカーを選択", manufacturer_hits["manufacturer_name"].tolist(), key="manufacturer_selected")
     selected_row = manufacturer_hits[manufacturer_hits["manufacturer_name"] == selected].iloc[0]
 
     related = relations[relations["manufacturer_name"] == selected].copy() if not relations.empty else pd.DataFrame()
@@ -747,27 +742,27 @@ def render_manufacturer_lookup(data: dict[str, pd.DataFrame]) -> None:
                 related[column_name] = related[relation_column].fillna(related.get(column_name, ""))
 
     distributor_query = st.text_input(
-        "莉｣逅・ｺ励・蜿匁桶蠎怜錐縺ｧ邨槭ｊ霎ｼ縺ｿ",
-        placeholder="萓・ 菴宣ｳ･髮ｻ讖・/ 譌･譛ｬ髮ｻ險・,
+        "代理店・取扱店名で絞り込み",
+        placeholder="例: 佐鳥電機 / 日本電計",
         key="manufacturer_distributor_filter",
     )
     category_filter = st.selectbox(
-        "蛹ｺ蛻・〒邨槭ｊ霎ｼ縺ｿ",
-        ["縺吶∋縺ｦ", *CATEGORY_FILTER_OPTIONS],
+        "区分で絞り込み",
+        ["すべて", *CATEGORY_FILTER_OPTIONS],
         key="manufacturer_category_filter",
     )
     if not related.empty and distributor_query:
         related = related[related["distributor_name"].str.contains(distributor_query, case=False, na=False)].copy()
-    if not related.empty and category_filter != "縺吶∋縺ｦ":
+    if not related.empty and category_filter != "すべて":
         related = related[related["relation_category"] == category_filter].copy()
 
-    st.write(f"莉｣逅・ｺ励・蜿匁桶蠎・ {len(related)}莉ｶ")
+    st.write(f"代理店・取扱店: {len(related)}件")
     if not related.empty:
         display_frame = related.rename(
             columns={
-                "relation_category": "蛹ｺ蛻・,
-                "review_status": "繧ｹ繝・・繧ｿ繧ｹ",
-                "memo": "繝｡繝｢",
+                "relation_category": "区分",
+                "review_status": "ステータス",
+                "memo": "メモ",
             }
         )
         render_link_table(
@@ -775,9 +770,9 @@ def render_manufacturer_lookup(data: dict[str, pd.DataFrame]) -> None:
                 [
                     "distributor_name",
                     "initial",
-                    "蛹ｺ蛻・,
-                    "繧ｹ繝・・繧ｿ繧ｹ",
-                    "繝｡繝｢",
+                    "区分",
+                    "ステータス",
+                    "メモ",
                     "company_url",
                     "location_url",
                     "online_sales_url",
@@ -785,10 +780,10 @@ def render_manufacturer_lookup(data: dict[str, pd.DataFrame]) -> None:
                 ]
             ],
             link_columns={
-                "company_url": "莨夂､ｾURL",
-                "location_url": "蝟ｶ讌ｭ諡轤ｹURL",
-                "online_sales_url": "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲURL",
-                "handling_makers_url": "蜿匁桶繝｡繝ｼ繧ｫ繝ｼURL",
+                "company_url": "会社URL",
+                "location_url": "営業拠点URL",
+                "online_sales_url": "オンライン販売URL",
+                "handling_makers_url": "取扱メーカーURL",
             },
         )
 
@@ -796,7 +791,7 @@ def render_manufacturer_lookup(data: dict[str, pd.DataFrame]) -> None:
             {
                 "entity_type": "distributor",
                 "entity_name": related["distributor_name"],
-                "company_type": "莉｣逅・ｺ励・蜿匁桶蠎・,
+                "company_type": "代理店・取扱店",
                 "manufacturer_name": related["manufacturer_name"],
                 "distributor_name": related["distributor_name"],
                 "relation_category": related["relation_category"],
@@ -812,42 +807,42 @@ def render_manufacturer_lookup(data: dict[str, pd.DataFrame]) -> None:
             }
         )
         render_unified_download(
-            build_unified_export(export_frame, search_type="繝｡繝ｼ繧ｫ繝ｼ讀懃ｴ｢", search_query=selected),
+            build_unified_export(export_frame, search_type="メーカー検索", search_query=selected),
             file_name=f"manufacturer_{selected_row['mcid']}_results.csv",
         )
 
 
 def render_distributor_lookup(data: dict[str, pd.DataFrame]) -> None:
-    st.subheader("莉｣逅・ｺ励・蜿匁桶蠎励°繧牙叙謇ｱ繝｡繝ｼ繧ｫ繝ｼ繧呈爾縺・)
+    st.subheader("代理店・取扱店から取扱メーカーを探す")
     controls_col, button_col = st.columns([5, 1])
     with controls_col:
         query = st.text_input(
-            "莉｣逅・ｺ励・蜿匁桶蠎怜錐",
-            placeholder="萓・ 菴宣ｳ･髮ｻ讖・/ 譌･譛ｬ髮ｻ險・/ 繝√ャ繝励Ρ繝ｳ繧ｹ繝医ャ繝・,
+            "代理店・取扱店名",
+            placeholder="例: 佐鳥電機 / 日本電計 / チップワンストップ",
             key="distributor_query",
         )
     with button_col:
         st.write("")
-        if st.button("繧ｯ繝ｪ繧｢", key="distributor_clear"):
+        if st.button("クリア", key="distributor_clear"):
             reset_form(DISTRIBUTOR_STATE_KEYS)
             st.rerun()
 
     if not query:
-        st.info("莉｣逅・ｺ励・蜿匁桶蠎怜錐繧貞・蜉帙☆繧九→蛟呵｣懊→蜿匁桶繝｡繝ｼ繧ｫ繝ｼ繧定｡ｨ遉ｺ縺励∪縺吶・)
+        st.info("代理店・取扱店名を入力すると候補と取扱メーカーを表示します。")
         return
 
     distributors = build_distributor_metadata(data["distributors"].copy(), data["labels"])
     distributor_hits = distributors[distributors["distributor_name"].str.contains(query, case=False, na=False)].copy()
 
-    st.write(f"莉｣逅・ｺ励・蜿匁桶蠎怜呵｣・ {len(distributor_hits)}莉ｶ")
+    st.write(f"代理店・取扱店候補: {len(distributor_hits)}件")
     if not distributor_hits.empty:
         render_link_table(
-            distributor_hits.rename(columns={"review_status": "繧ｹ繝・・繧ｿ繧ｹ", "memo": "繝｡繝｢"})[
+            distributor_hits.rename(columns={"review_status": "ステータス", "memo": "メモ"})[
                 [
                     "distributor_name",
                     "initial",
-                    "繧ｹ繝・・繧ｿ繧ｹ",
-                    "繝｡繝｢",
+                    "ステータス",
+                    "メモ",
                     "company_url",
                     "location_url",
                     "online_sales_url",
@@ -855,17 +850,17 @@ def render_distributor_lookup(data: dict[str, pd.DataFrame]) -> None:
                 ]
             ],
             link_columns={
-                "company_url": "莨夂､ｾURL",
-                "location_url": "蝟ｶ讌ｭ諡轤ｹURL",
-                "online_sales_url": "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲURL",
-                "handling_makers_url": "蜿匁桶繝｡繝ｼ繧ｫ繝ｼURL",
+                "company_url": "会社URL",
+                "location_url": "営業拠点URL",
+                "online_sales_url": "オンライン販売URL",
+                "handling_makers_url": "取扱メーカーURL",
             },
         )
     if distributor_hits.empty:
         return
 
     selected = st.selectbox(
-        "蟇ｾ雎｡莉｣逅・ｺ励・蜿匁桶蠎励ｒ驕ｸ謚・,
+        "対象代理店・取扱店を選択",
         distributor_hits["distributor_name"].tolist(),
         key="distributor_selected",
     )
@@ -896,38 +891,38 @@ def render_distributor_lookup(data: dict[str, pd.DataFrame]) -> None:
             left_on=["did", "handling_manufacturer_name"],
             right_on=["did", "manufacturer_name"],
         )
-    related["relation_category"] = related["relation_category"].fillna("譛ｪ險ｭ螳・)
+    related["relation_category"] = related["relation_category"].fillna("未設定")
 
     relation_filter = st.selectbox(
-        "蜿匁桶繝｡繝ｼ繧ｫ繝ｼ縺ｮ蛹ｺ蛻・〒邨槭ｊ霎ｼ縺ｿ",
-        ["縺吶∋縺ｦ", *CATEGORY_FILTER_OPTIONS],
+        "取扱メーカーの区分で絞り込み",
+        ["すべて", *CATEGORY_FILTER_OPTIONS],
         key="distributor_relation_filter",
     )
-    if relation_filter != "縺吶∋縺ｦ":
+    if relation_filter != "すべて":
         related = related[related["relation_category"] == relation_filter].copy()
 
     counts = related["relation_category"].value_counts()
     col1, col2, col3 = st.columns(3)
-    col1.metric("莉｣逅・ｺ嶺ｻｶ謨ｰ", str(int(counts.get("莉｣逅・ｺ・, 0))))
-    col2.metric("蜿匁桶蠎嶺ｻｶ謨ｰ", str(int(counts.get("蜿匁桶蠎・, 0))))
-    col3.metric("繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ莉ｶ謨ｰ", str(int(counts.get("繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲ", 0))))
+    col1.metric("代理店件数", str(int(counts.get("代理店", 0))))
+    col2.metric("取扱店件数", str(int(counts.get("取扱店", 0))))
+    col3.metric("オンライン販売件数", str(int(counts.get("オンライン販売", 0))))
 
-    st.write(f"蜿匁桶繝｡繝ｼ繧ｫ繝ｼ: {len(related)}莉ｶ")
-    display_frame = related.rename(columns={"relation_category": "蛹ｺ蛻・})
+    st.write(f"取扱メーカー: {len(related)}件")
+    display_frame = related.rename(columns={"relation_category": "区分"})
     render_link_table(
         display_frame[
             [
                 column_name
-                for column_name in ["handling_manufacturer_name", "蛹ｺ蛻・, "manufacturer_page_url"]
+                for column_name in ["handling_manufacturer_name", "区分", "manufacturer_page_url"]
                 if column_name in display_frame.columns
             ]
         ],
-        link_columns={"manufacturer_page_url": "indexPro 繝｡繝ｼ繧ｫ繝ｼ繝壹・繧ｸ"},
+        link_columns={"manufacturer_page_url": "indexPro メーカーページ"},
     )
 
     related["entity_type"] = "distributor"
     related["entity_name"] = selected_row["distributor_name"]
-    related["company_type"] = "莉｣逅・ｺ励・蜿匁桶蠎・
+    related["company_type"] = "代理店・取扱店"
     related["classification"] = selected_row["classification"]
     related["review_status"] = selected_row["review_status"]
     related["memo"] = selected_row["memo"]
@@ -940,7 +935,7 @@ def render_distributor_lookup(data: dict[str, pd.DataFrame]) -> None:
     related["distributor_name"] = selected_row["distributor_name"]
 
     render_unified_download(
-        build_unified_export(related, search_type="莉｣逅・ｺ励・蜿匁桶蠎玲､懃ｴ｢", search_query=selected),
+        build_unified_export(related, search_type="代理店・取扱店検索", search_query=selected),
         file_name=f"distributor_{did}_results.csv",
     )
 
@@ -963,10 +958,10 @@ def render_company_metadata_editor(company_frame: pd.DataFrame, labels: pd.DataF
     if company_frame.empty:
         return
 
-    with st.expander("蛹ｺ蛻・・繧ｹ繝・・繧ｿ繧ｹ繝ｻ繝｡繝｢繧定ｨｭ螳壹☆繧・):
+    with st.expander("区分・ステータス・メモを設定する"):
         keys, labels_by_key = build_company_option_labels(company_frame)
         selected_key = st.selectbox(
-            "蟇ｾ雎｡莨∵･ｭ",
+            "対象企業",
             keys,
             format_func=lambda key: labels_by_key.get(key, key),
             key="company_editor_target",
@@ -974,43 +969,43 @@ def render_company_metadata_editor(company_frame: pd.DataFrame, labels: pd.DataF
         entity_type, entity_name = selected_key.split(":", 1)
         current = get_current_metadata(labels, entity_type, entity_name)
         selected_category = st.selectbox(
-            "蛹ｺ蛻・,
+            "区分",
             MANUAL_CATEGORY_OPTIONS,
             index=MANUAL_CATEGORY_OPTIONS.index(current["classification"]),
             key="company_editor_category",
         )
         selected_status = st.selectbox(
-            "繧ｹ繝・・繧ｿ繧ｹ",
+            "ステータス",
             REVIEW_STATUS_OPTIONS,
             index=REVIEW_STATUS_OPTIONS.index(current["review_status"]),
             key="company_editor_status",
         )
         memo_value = st.text_area(
-            "繝｡繝｢",
+            "メモ",
             value=current["memo"],
             height=100,
             key="company_editor_memo",
         )
-        if st.button("菫晏ｭ・, key="company_editor_save"):
+        if st.button("保存", key="company_editor_save"):
             updated = upsert_metadata(labels, entity_type, entity_name, selected_category, selected_status, memo_value)
             save_labels(updated)
-            st.success("險ｭ螳壹ｒ菫晏ｭ倥＠縺ｾ縺励◆縲・)
+            st.success("設定を保存しました。")
             st.rerun()
 
 
 def get_current_metadata(labels: pd.DataFrame, entity_type: str, entity_name: str) -> dict[str, str]:
     if labels.empty:
-        return {"classification": "譛ｪ險ｭ螳・, "review_status": "譛ｪ險ｭ螳・, "memo": ""}
+        return {"classification": "未設定", "review_status": "未設定", "memo": ""}
     matched = labels[
         (labels["entity_type"].astype(str) == str(entity_type))
         & (labels["entity_name"].astype(str) == str(entity_name))
     ]
     if matched.empty:
-        return {"classification": "譛ｪ險ｭ螳・, "review_status": "譛ｪ險ｭ螳・, "memo": ""}
+        return {"classification": "未設定", "review_status": "未設定", "memo": ""}
     row = matched.iloc[-1]
     return {
-        "classification": normalize_manual_category(row.get("classification", "譛ｪ險ｭ螳・)),
-        "review_status": normalize_review_status(row.get("review_status", "譛ｪ險ｭ螳・)),
+        "classification": normalize_manual_category(row.get("classification", "未設定")),
+        "review_status": normalize_review_status(row.get("review_status", "未設定")),
         "memo": str(row.get("memo", "") or ""),
     }
 
@@ -1049,41 +1044,41 @@ def upsert_metadata(
 
 
 def _legacy_render_candidate_agent_lookup_text_input(data: dict[str, pd.DataFrame]) -> None:
-    st.subheader("繝｡繝ｼ繧ｫ繝ｼ ﾃ・蜿匁桶蠎励°繧画耳螳壻ｻ｣逅・ｺ励ｒ謗｢縺・)
+    st.subheader("メーカー × 取扱店から推定代理店を探す")
 
     input_col1, input_col2, button_col = st.columns([3, 3, 1])
     with input_col1:
         manufacturer_query = st.text_input(
-            "繝｡繝ｼ繧ｫ繝ｼ蜷・,
-            placeholder="萓・ 繧ｪ繝繝ｭ繝ｳ / 譚ｱ闃昴ユ繝・け / SMC",
+            "メーカー名",
+            placeholder="例: オムロン / 東芝テック / SMC",
             key="inference_manufacturer_query",
         )
     with input_col2:
         retailer_query = st.text_input(
-            "蜿匁桶蠎怜錐",
-            placeholder="萓・ 繧｢繧､繝九ャ繧ｯ繧ｹ / 譌･莨・/ 莉頑ｰｸ髮ｻ讖溽肇讌ｭ",
+            "取扱店名",
+            placeholder="例: アイニックス / 日伝 / 今永電機産業",
             key="inference_retailer_query",
         )
     with button_col:
         st.write("")
-        if st.button("繧ｯ繝ｪ繧｢", key="inference_clear"):
+        if st.button("クリア", key="inference_clear"):
             reset_form(INFERENCE_STATE_KEYS)
             st.rerun()
 
     manufacturer_query = manufacturer_query.strip()
     retailer_query = retailer_query.strip()
-    search_clicked = st.button("讀懃ｴ｢", key="inference_search")
+    search_clicked = st.button("検索", key="inference_search")
 
     if not manufacturer_query and not retailer_query:
-        st.info("繝｡繝ｼ繧ｫ繝ｼ蜷阪→蜿匁桶蠎怜錐繧貞・蜉帙☆繧九→縲∽ｸ｡譁ｹ縺ｫ髢｢菫ゅ＠縺昴≧縺ｪ莉｣逅・ｺ怜呵｣懊ｒ陦ｨ遉ｺ縺励∪縺吶・)
+        st.info("メーカー名と取扱店名を入力すると、両方に関係しそうな代理店候補を表示します。")
         return
 
     if not manufacturer_query or not retailer_query:
-        st.info("繝｡繝ｼ繧ｫ繝ｼ蜷阪→蜿匁桶蠎怜錐縺ｮ荳｡譁ｹ繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲・)
+        st.info("メーカー名と取扱店名の両方を入力してください。")
         return
 
     if not search_clicked:
-        st.caption("讀懃ｴ｢繝懊ち繝ｳ繧呈款縺吶→縲∝叙謇ｱ蠎怜・縺ｮ髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ縺ｨ繝｡繝ｼ繧ｫ繝ｼ逶ｴ荳九・莉｣逅・ｺ励ｒ遯√″蜷医ｏ縺帙※蛟呵｣懊ｒ蜃ｺ縺励∪縺吶・)
+        st.caption("検索ボタンを押すと、取扱店側の関連メーカーとメーカー直下の代理店を突き合わせて候補を出します。")
         return
 
     results = get_candidate_agents_by_manufacturer_and_retailer(
@@ -1094,22 +1089,22 @@ def _legacy_render_candidate_agent_lookup_text_input(data: dict[str, pd.DataFram
     )
 
     if not results:
-        st.warning("謗ｨ螳壻ｻ｣逅・ｺ怜呵｣懊・0莉ｶ縺ｧ縺励◆縲よ擅莉ｶ繧貞､峨∴縺ｦ蜀榊ｺｦ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・)
+        st.warning("推定代理店候補は0件でした。条件を変えて再度確認してください。")
         return
 
     distributors = build_distributor_metadata(data["distributors"].copy(), data["labels"])
     result_frame = pd.DataFrame(
         [
             {
-                "鬆・ｽ・: item.rank,
-                "莉｣逅・ｺ怜錐": item.agent_name,
-                "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢": f"{item.score:.2f}",
+                "順位": item.rank,
+                "代理店名": item.agent_name,
+                "基本スコア": f"{item.score:.2f}",
                 "score_value": item.score,
-                "繝｡繝ｼ繧ｫ繝ｼ縺ｨ縺ｮ逶ｴ謗･謗･邯壽怏辟｡": "true" if item.has_direct_connection else "false",
-                "蜿匁桶蠎怜・髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ謨ｰ": item.retailer_related_manufacturer_count,
-                "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ莉ｶ謨ｰ": item.matched_related_manufacturer_count,
-                "莉｣逅・ｺ礼ｷ丞叙謇ｱ繝｡繝ｼ繧ｫ繝ｼ謨ｰ": item.agent_total_handling_count,
-                "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ荳隕ｧ": ", ".join(item.evidence_manufacturers),
+                "メーカーとの直接接続有無": "true" if item.has_direct_connection else "false",
+                "取扱店側関連メーカー数": item.retailer_related_manufacturer_count,
+                "関連メーカー件数": item.matched_related_manufacturer_count,
+                "代理店総取扱メーカー数": item.agent_total_handling_count,
+                "関連メーカー一覧": ", ".join(item.evidence_manufacturers),
             }
             for item in results
         ]
@@ -1128,25 +1123,25 @@ def _legacy_render_candidate_agent_lookup_text_input(data: dict[str, pd.DataFram
             ]
         ].drop_duplicates(subset=["distributor_name"]),
         how="left",
-        left_on="莉｣逅・ｺ怜錐",
+        left_on="代理店名",
         right_on="distributor_name",
     )
     result_frame["classification"] = result_frame["classification"].fillna("")
     result_frame["review_status"] = result_frame["review_status"].fillna("")
     result_frame["memo"] = result_frame["memo"].fillna("")
 
-    st.write(f"謗ｨ螳壻ｻ｣逅・ｺ怜呵｣・ {len(result_frame)}莉ｶ")
+    st.write(f"推定代理店候補: {len(result_frame)}件")
     render_link_table(
         result_frame[
             [
-                "鬆・ｽ・,
-                "莉｣逅・ｺ怜錐",
-                "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢",
-                "繝｡繝ｼ繧ｫ繝ｼ縺ｨ縺ｮ逶ｴ謗･謗･邯壽怏辟｡",
-                "蜿匁桶蠎怜・髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ謨ｰ",
-                "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ莉ｶ謨ｰ",
-                "莉｣逅・ｺ礼ｷ丞叙謇ｱ繝｡繝ｼ繧ｫ繝ｼ謨ｰ",
-                "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ荳隕ｧ",
+                "順位",
+                "代理店名",
+                "基本スコア",
+                "メーカーとの直接接続有無",
+                "取扱店側関連メーカー数",
+                "関連メーカー件数",
+                "代理店総取扱メーカー数",
+                "関連メーカー一覧",
                 "company_url",
                 "location_url",
                 "online_sales_url",
@@ -1154,23 +1149,23 @@ def _legacy_render_candidate_agent_lookup_text_input(data: dict[str, pd.DataFram
             ]
         ],
         link_columns={
-            "company_url": "莨夂､ｾURL",
-            "location_url": "蝟ｶ讌ｭ諡轤ｹURL",
-            "online_sales_url": "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲURL",
-            "handling_makers_url": "蜿匁桶繝｡繝ｼ繧ｫ繝ｼURL",
+            "company_url": "会社URL",
+            "location_url": "営業拠点URL",
+            "online_sales_url": "オンライン販売URL",
+            "handling_makers_url": "取扱メーカーURL",
         },
     )
 
     export_frame = result_frame[
         [
-            "鬆・ｽ・,
-            "莉｣逅・ｺ怜錐",
-            "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢",
-            "繝｡繝ｼ繧ｫ繝ｼ縺ｨ縺ｮ逶ｴ謗･謗･邯壽怏辟｡",
-            "蜿匁桶蠎怜・髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ謨ｰ",
-            "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ莉ｶ謨ｰ",
-            "莉｣逅・ｺ礼ｷ丞叙謇ｱ繝｡繝ｼ繧ｫ繝ｼ謨ｰ",
-            "髢｢騾｣繝｡繝ｼ繧ｫ繝ｼ荳隕ｧ",
+            "順位",
+            "代理店名",
+            "基本スコア",
+            "メーカーとの直接接続有無",
+            "取扱店側関連メーカー数",
+            "関連メーカー件数",
+            "代理店総取扱メーカー数",
+            "関連メーカー一覧",
             "classification",
             "review_status",
             "memo",
@@ -1181,13 +1176,13 @@ def _legacy_render_candidate_agent_lookup_text_input(data: dict[str, pd.DataFram
         ]
     ].rename(
         columns={
-            "classification": "蛹ｺ蛻・,
-            "review_status": "繧ｹ繝・・繧ｿ繧ｹ",
-            "memo": "繝｡繝｢",
-            "company_url": "莨夂､ｾURL",
-            "location_url": "蝟ｶ讌ｭ諡轤ｹURL",
-            "online_sales_url": "繧ｪ繝ｳ繝ｩ繧､繝ｳ雋ｩ螢ｲURL",
-            "handling_makers_url": "蜿匁桶繝｡繝ｼ繧ｫ繝ｼURL",
+            "classification": "区分",
+            "review_status": "ステータス",
+            "memo": "メモ",
+            "company_url": "会社URL",
+            "location_url": "営業拠点URL",
+            "online_sales_url": "オンライン販売URL",
+            "handling_makers_url": "取扱メーカーURL",
         }
     )
     render_unified_download(export_frame, file_name="candidate_agents_results.csv")
@@ -1195,19 +1190,17 @@ def _legacy_render_candidate_agent_lookup_text_input(data: dict[str, pd.DataFram
 
 def main() -> None:
     st.set_page_config(
-        page_title="indexPro 莉募・蜈域､懃ｴ｢",
+        page_title="indexPro 仕入先検索",
         page_icon=":material/account_tree:",
         layout="wide",
     )
 
-    st.title("indexPro 莉募・蜈域､懃ｴ｢")
-    st.caption("莨∵･ｭ讀懃ｴ｢縲√Γ繝ｼ繧ｫ繝ｼ讀懃ｴ｢縲∽ｻ｣逅・ｺ励・蜿匁桶蠎玲､懃ｴ｢縲∵耳螳壻ｻ｣逅・ｺ玲､懃ｴ｢繧・縺､縺ｮ逕ｻ髱｢縺ｧ遒ｺ隱阪〒縺阪∪縺吶・)
-
-    require_login()
+    st.title("indexPro 仕入先検索")
+    st.caption("企業検索、メーカー検索、代理店・取扱店検索、推定代理店検索を1つの画面で確認できます。")
 
     missing = find_missing_files()
     if missing:
-        st.error("蠢・ｦ√↑CSV縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縲ょ・縺ｫ荳隕ｧ蜿門ｾ励ｒ螳溯｡後＠縺ｦ縺上□縺輔＞縲・)
+        st.error("必要なCSVが見つかりません。先に一覧取得を実行してください。")
         for path in missing:
             st.code(str(path))
         st.stop()
@@ -1216,7 +1209,7 @@ def main() -> None:
     render_summary(data)
 
     tab1, tab2, tab3, tab4 = st.tabs(
-        ["莨∵･ｭ讀懃ｴ｢", "繝｡繝ｼ繧ｫ繝ｼ讀懃ｴ｢", "莉｣逅・ｺ励・蜿匁桶蠎玲､懃ｴ｢", "謗ｨ螳壻ｻ｣逅・ｺ玲､懃ｴ｢"]
+        ["企業検索", "メーカー検索", "代理店・取扱店検索", "推定代理店検索"]
     )
     with tab1:
         render_company_lookup(data)
@@ -1228,7 +1221,7 @@ def main() -> None:
         render_candidate_agent_lookup(data)
 
 def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
-    st.subheader("繝｡繝ｼ繧ｫ繝ｼ縺九ｉ謗ｨ螳夂ｫｶ蜷医Γ繝ｼ繧ｫ繝ｼ繧呈爾縺・)
+    st.subheader("メーカーから推定競合メーカーを探す")
 
     manufacturers = build_manufacturer_metadata(data["manufacturers"].copy(), data["labels"])
     manufacturer_options = [""] + sorted(
@@ -1238,21 +1231,21 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
     input_col1, input_col2, input_col3, button_col = st.columns([3, 2, 2, 1])
     with input_col1:
         manufacturer_query = st.selectbox(
-            "繝｡繝ｼ繧ｫ繝ｼ蜷・,
+            "メーカー名",
             manufacturer_options,
             index=0,
             key="competitor_manufacturer_query",
-            format_func=lambda value: value or "驕ｸ謚槭＠縺ｦ縺上□縺輔＞",
+            format_func=lambda value: value or "選択してください",
         )
     with input_col2:
         exclude_large = st.checkbox(
-            "蜿匁桶繝｡繝ｼ繧ｫ繝ｼ謨ｰ縺悟､壹☆縺弱ｋ莉｣逅・ｺ励ｒ髯､螟・,
+            "取扱メーカー数が多すぎる代理店を除外",
             value=True,
             key="competitor_max_handling_enabled",
         )
     with input_col3:
         max_handling_count = st.number_input(
-            "髯､螟紋ｸ企剞",
+            "除外上限",
             min_value=1,
             value=30,
             step=1,
@@ -1261,19 +1254,19 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
         )
     with button_col:
         st.write("")
-        if st.button("繧ｯ繝ｪ繧｢", key="competitor_clear"):
+        if st.button("クリア", key="competitor_clear"):
             reset_form(COMPETITOR_STATE_KEYS)
             st.rerun()
 
     manufacturer_query = str(manufacturer_query).strip()
-    search_clicked = st.button("謗ｨ螳夂ｫｶ蜷医ｒ讀懃ｴ｢", key="competitor_search")
+    search_clicked = st.button("推定競合を検索", key="competitor_search")
 
     if not manufacturer_query:
-        st.info("繝｡繝ｼ繧ｫ繝ｼ蜷阪ｒ驕ｸ謚槭☆繧九→縲∝・騾壻ｻ｣逅・ｺ励・繝ｼ繧ｹ縺ｮ謗ｨ螳夂ｫｶ蜷医Γ繝ｼ繧ｫ繝ｼ荳隕ｧ繧定｡ｨ遉ｺ縺励∪縺吶・)
+        st.info("メーカー名を選択すると、共通代理店ベースの推定競合メーカー一覧を表示します。")
         return
 
     if not search_clicked:
-        st.caption("讀懃ｴ｢繝懊ち繝ｳ繧呈款縺吶→縲・∈謚槭Γ繝ｼ繧ｫ繝ｼ縺ｨ蜷後§莉｣逅・ｺ励〒謇ｱ繧上ｌ縺ｦ縺・ｋ莉悶Γ繝ｼ繧ｫ繝ｼ繧偵せ繧ｳ繧｢蛹悶＠縺ｦ荳ｦ縺ｹ縺ｾ縺吶・)
+        st.caption("検索ボタンを押すと、選択メーカーと同じ代理店で扱われている他メーカーをスコア化して並べます。")
         return
 
     results = get_competitor_candidates(
@@ -1284,47 +1277,47 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
     )
 
     if not results:
-        st.warning("謗ｨ螳夂ｫｶ蜷医Γ繝ｼ繧ｫ繝ｼ縺ｯ0莉ｶ縺ｧ縺励◆縲る勁螟匁擅莉ｶ繧堤ｷｩ繧√ｋ縺九∝挨縺ｮ繝｡繝ｼ繧ｫ繝ｼ縺ｧ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・)
+        st.warning("推定競合メーカーは0件でした。除外条件を緩めるか、別のメーカーで確認してください。")
         return
 
     result_frame = pd.DataFrame(
         [
             {
-                "鬆・ｽ・: item.rank,
-                "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷・: item.candidate_manufacturer_name,
-                "蜈ｱ騾壻ｻ｣逅・ｺ玲焚": item.common_distributor_count,
-                "驕ｸ謚槭Γ繝ｼ繧ｫ繝ｼ莉｣逅・ｺ玲焚": item.base_manufacturer_distributor_count,
-                "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ莉｣逅・ｺ玲焚": item.candidate_manufacturer_distributor_count,
-                "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢": f"{item.basic_score:.2f}",
-                "鬘樔ｼｼ蠎ｦ繧ｹ繧ｳ繧｢": f"{item.similarity_score:.2f}",
-                "蜈ｱ騾壻ｻ｣逅・ｺ嶺ｸ隕ｧ": ", ".join(item.common_distributors),
+                "順位": item.rank,
+                "候補メーカー名": item.candidate_manufacturer_name,
+                "共通代理店数": item.common_distributor_count,
+                "選択メーカー代理店数": item.base_manufacturer_distributor_count,
+                "候補メーカー代理店数": item.candidate_manufacturer_distributor_count,
+                "基本スコア": f"{item.basic_score:.2f}",
+                "類似度スコア": f"{item.similarity_score:.2f}",
+                "共通代理店一覧": ", ".join(item.common_distributors),
             }
             for item in results[:50]
         ]
     )
 
     candidate_filter = st.text_input(
-        "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷阪〒邨槭ｊ霎ｼ縺ｿ",
-        placeholder="萓・ 繧ｪ繝繝ｭ繝ｳ / 荳芽廠 / SMC",
+        "候補メーカー名で絞り込み",
+        placeholder="例: オムロン / 三菱 / SMC",
         key="competitor_candidate_filter",
     ).strip()
     if candidate_filter:
         result_frame = result_frame[
-            result_frame["蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷・].str.contains(candidate_filter, case=False, na=False)
+            result_frame["候補メーカー名"].str.contains(candidate_filter, case=False, na=False)
         ].copy()
 
-    st.write(f"謗ｨ螳夂ｫｶ蜷医Γ繝ｼ繧ｫ繝ｼ: {len(result_frame)}莉ｶ")
+    st.write(f"推定競合メーカー: {len(result_frame)}件")
     render_link_table(
         result_frame[
             [
-                "鬆・ｽ・,
-                "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷・,
-                "蜈ｱ騾壻ｻ｣逅・ｺ玲焚",
-                "驕ｸ謚槭Γ繝ｼ繧ｫ繝ｼ莉｣逅・ｺ玲焚",
-                "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ莉｣逅・ｺ玲焚",
-                "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢",
-                "鬘樔ｼｼ蠎ｦ繧ｹ繧ｳ繧｢",
-                "蜈ｱ騾壻ｻ｣逅・ｺ嶺ｸ隕ｧ",
+                "順位",
+                "候補メーカー名",
+                "共通代理店数",
+                "選択メーカー代理店数",
+                "候補メーカー代理店数",
+                "基本スコア",
+                "類似度スコア",
+                "共通代理店一覧",
             ]
         ]
     )
@@ -1333,28 +1326,27 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
 
 def main() -> None:
     st.set_page_config(
-        page_title="indexPro 莉募・蜈域､懃ｴ｢",
+        page_title="indexPro 仕入先検索",
         page_icon=":material/account_tree:",
         layout="wide",
     )
 
-    st.title("indexPro 莉募・蜈域､懃ｴ｢")
-    st.caption("莨∵･ｭ讀懃ｴ｢縲√Γ繝ｼ繧ｫ繝ｼ讀懃ｴ｢縲∽ｻ｣逅・ｺ励・蜿匁桶蠎玲､懃ｴ｢縲∵耳螳壻ｻ｣逅・ｺ玲､懃ｴ｢縲∵耳螳夂ｫｶ蜷域､懃ｴ｢繧・縺､縺ｮ逕ｻ髱｢縺ｧ遒ｺ隱阪〒縺阪∪縺吶・)
-
-    require_login()
+    st.title("indexPro 仕入先検索")
+    st.caption("企業検索、メーカー検索、代理店・取扱店検索、推定代理店検索、推定競合検索を1つの画面で確認できます。")
 
     missing = find_missing_files()
     if missing:
-        st.error("蠢・ｦ√↑CSV縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縲ょ・縺ｫ荳隕ｧ蜿門ｾ励ｒ螳溯｡後＠縺ｦ縺上□縺輔＞縲・)
+        st.error("必要なCSVが見つかりません。先に一覧取得を実行してください。")
         for path in missing:
             st.code(str(path))
         st.stop()
 
+    require_login()
     data = load_app_data()
     render_summary(data)
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["莨∵･ｭ讀懃ｴ｢", "繝｡繝ｼ繧ｫ繝ｼ讀懃ｴ｢", "莉｣逅・ｺ励・蜿匁桶蠎玲､懃ｴ｢", "謗ｨ螳壻ｻ｣逅・ｺ玲､懃ｴ｢", "謗ｨ螳夂ｫｶ蜷域､懃ｴ｢"]
+        ["企業検索", "メーカー検索", "代理店・取扱店検索", "推定代理店検索", "推定競合検索"]
     )
     with tab1:
         render_company_lookup(data)
@@ -1370,7 +1362,7 @@ def main() -> None:
 
 
 def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
-    st.subheader("繝｡繝ｼ繧ｫ繝ｼ縺九ｉ謗ｨ螳夂ｫｶ蜷医Γ繝ｼ繧ｫ繝ｼ繧呈爾縺・)
+    st.subheader("メーカーから推定競合メーカーを探す")
 
     manufacturers = build_manufacturer_metadata(data["manufacturers"].copy(), data["labels"])
     manufacturer_options = [""] + sorted(
@@ -1380,21 +1372,21 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
     input_col1, input_col2, input_col3, button_col = st.columns([3, 2, 2, 1])
     with input_col1:
         manufacturer_query = st.selectbox(
-            "繝｡繝ｼ繧ｫ繝ｼ蜷・,
+            "メーカー名",
             manufacturer_options,
             index=0,
             key="competitor_manufacturer_query",
-            format_func=lambda value: value or "驕ｸ謚槭＠縺ｦ縺上□縺輔＞",
+            format_func=lambda value: value or "選択してください",
         )
     with input_col2:
         exclude_large = st.checkbox(
-            "蜿匁桶繝｡繝ｼ繧ｫ繝ｼ謨ｰ縺悟､壹☆縺弱ｋ莉｣逅・ｺ励ｒ髯､螟・,
+            "取扱メーカー数が多すぎる代理店を除外",
             value=True,
             key="competitor_max_handling_enabled",
         )
     with input_col3:
         max_handling_count = st.number_input(
-            "髯､螟紋ｸ企剞",
+            "除外上限",
             min_value=1,
             value=30,
             step=1,
@@ -1403,19 +1395,19 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
         )
     with button_col:
         st.write("")
-        if st.button("繧ｯ繝ｪ繧｢", key="competitor_clear"):
+        if st.button("クリア", key="competitor_clear"):
             reset_form(COMPETITOR_STATE_KEYS)
             st.rerun()
 
     manufacturer_query = str(manufacturer_query).strip()
-    search_clicked = st.button("謗ｨ螳夂ｫｶ蜷医ｒ讀懃ｴ｢", key="competitor_search")
+    search_clicked = st.button("推定競合を検索", key="competitor_search")
 
     if not manufacturer_query:
-        st.info("繝｡繝ｼ繧ｫ繝ｼ蜷阪ｒ驕ｸ謚槭☆繧九→縲∝・騾壻ｻ｣逅・ｺ励・繝ｼ繧ｹ縺ｮ謗ｨ螳夂ｫｶ蜷医Γ繝ｼ繧ｫ繝ｼ荳隕ｧ繧定｡ｨ遉ｺ縺励∪縺吶・)
+        st.info("メーカー名を選択すると、共通代理店ベースの推定競合メーカー一覧を表示します。")
         return
 
     if not search_clicked:
-        st.caption("讀懃ｴ｢繝懊ち繝ｳ繧呈款縺吶→縲・∈謚槭Γ繝ｼ繧ｫ繝ｼ縺ｨ蜷後§莉｣逅・ｺ励〒謇ｱ繧上ｌ縺ｦ縺・ｋ莉悶Γ繝ｼ繧ｫ繝ｼ繧偵せ繧ｳ繧｢蛹悶＠縺ｦ荳ｦ縺ｹ縺ｾ縺吶・)
+        st.caption("検索ボタンを押すと、選択メーカーと同じ代理店で扱われている他メーカーをスコア化して並べます。")
         return
 
     results = get_competitor_candidates(
@@ -1426,20 +1418,20 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
     )
 
     if not results:
-        st.warning("謗ｨ螳夂ｫｶ蜷医Γ繝ｼ繧ｫ繝ｼ縺ｯ0莉ｶ縺ｧ縺励◆縲る勁螟匁擅莉ｶ繧堤ｷｩ繧√ｋ縺九∝挨縺ｮ繝｡繝ｼ繧ｫ繝ｼ縺ｧ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・)
+        st.warning("推定競合メーカーは0件でした。除外条件を緩めるか、別のメーカーで確認してください。")
         return
 
     result_frame = pd.DataFrame(
         [
             {
-                "鬆・ｽ・: item.rank,
-                "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷・: item.candidate_manufacturer_name,
-                "蜈ｱ騾壻ｻ｣逅・ｺ玲焚": item.common_distributor_count,
-                "驕ｸ謚槭Γ繝ｼ繧ｫ繝ｼ莉｣逅・ｺ玲焚": item.base_manufacturer_distributor_count,
-                "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ莉｣逅・ｺ玲焚": item.candidate_manufacturer_distributor_count,
-                "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢": f"{item.basic_score:.2f}",
-                "鬘樔ｼｼ蠎ｦ繧ｹ繧ｳ繧｢": f"{item.similarity_score:.2f}",
-                "蜈ｱ騾壻ｻ｣逅・ｺ嶺ｸ隕ｧ": ", ".join(item.common_distributors),
+                "順位": item.rank,
+                "候補メーカー名": item.candidate_manufacturer_name,
+                "共通代理店数": item.common_distributor_count,
+                "選択メーカー代理店数": item.base_manufacturer_distributor_count,
+                "候補メーカー代理店数": item.candidate_manufacturer_distributor_count,
+                "基本スコア": f"{item.basic_score:.2f}",
+                "類似度スコア": f"{item.similarity_score:.2f}",
+                "共通代理店一覧": ", ".join(item.common_distributors),
             }
             for item in results[:50]
         ]
@@ -1447,36 +1439,36 @@ def render_competitor_lookup(data: dict[str, pd.DataFrame]) -> None:
     result_frame = result_frame.merge(
         manufacturers[["manufacturer_name", "manufacturer_page_url"]].drop_duplicates(subset=["manufacturer_name"]),
         how="left",
-        left_on="蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷・,
+        left_on="候補メーカー名",
         right_on="manufacturer_name",
     )
 
     candidate_filter = st.text_input(
-        "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷阪〒邨槭ｊ霎ｼ縺ｿ",
-        placeholder="萓・ 繧ｪ繝繝ｭ繝ｳ / 荳芽廠 / SMC",
+        "候補メーカー名で絞り込み",
+        placeholder="例: オムロン / 三菱 / SMC",
         key="competitor_candidate_filter",
     ).strip()
     if candidate_filter:
         result_frame = result_frame[
-            result_frame["蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷・].str.contains(candidate_filter, case=False, na=False)
+            result_frame["候補メーカー名"].str.contains(candidate_filter, case=False, na=False)
         ].copy()
 
-    st.write(f"謗ｨ螳夂ｫｶ蜷医Γ繝ｼ繧ｫ繝ｼ: {len(result_frame)}莉ｶ")
+    st.write(f"推定競合メーカー: {len(result_frame)}件")
     render_link_table(
         result_frame[
             [
-                "鬆・ｽ・,
-                "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ蜷・,
-                "蜈ｱ騾壻ｻ｣逅・ｺ玲焚",
-                "驕ｸ謚槭Γ繝ｼ繧ｫ繝ｼ莉｣逅・ｺ玲焚",
-                "蛟呵｣懊Γ繝ｼ繧ｫ繝ｼ莉｣逅・ｺ玲焚",
-                "蝓ｺ譛ｬ繧ｹ繧ｳ繧｢",
-                "鬘樔ｼｼ蠎ｦ繧ｹ繧ｳ繧｢",
+                "順位",
+                "候補メーカー名",
+                "共通代理店数",
+                "選択メーカー代理店数",
+                "候補メーカー代理店数",
+                "基本スコア",
+                "類似度スコア",
                 "manufacturer_page_url",
-                "蜈ｱ騾壻ｻ｣逅・ｺ嶺ｸ隕ｧ",
+                "共通代理店一覧",
             ]
         ],
-        link_columns={"manufacturer_page_url": "indexPro 繝｡繝ｼ繧ｫ繝ｼ繝壹・繧ｸ"},
+        link_columns={"manufacturer_page_url": "indexPro メーカーページ"},
     )
     render_unified_download(result_frame, file_name="competitor_candidates_results.csv")
 
@@ -1486,10 +1478,10 @@ def render_summary(data: dict[str, pd.DataFrame]) -> None:
     validation = metrics_to_map(data["validation"])
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("繝｡繝ｼ繧ｫ繝ｼ謨ｰ", metrics.get("manufacturer_count", "-"))
-    col2.metric("莉｣逅・ｺ玲焚", metrics.get("distributor_count", "-"))
-    col3.metric("蜿匁桶髢｢菫よ焚", metrics.get("handling_relation_count", "-"))
-    col4.metric("譛ｪ荳閾ｴ莉ｶ謨ｰ", validation.get("handling_unmatched", "-"))
+    col1.metric("メーカー数", metrics.get("manufacturer_count", "-"))
+    col2.metric("代理店数", metrics.get("distributor_count", "-"))
+    col3.metric("取扱関係数", metrics.get("handling_relation_count", "-"))
+    col4.metric("未一致件数", validation.get("handling_unmatched", "-"))
 
 
 def format_generated_date(value: str) -> str:
@@ -1522,14 +1514,13 @@ def render_footer(data: dict[str, pd.DataFrame]) -> None:
     deploy_date = format_generated_date(deploy_info.get("last_redeploy_utc", ""))
     generated_date = format_generated_date(metrics.get("generated_at", ""))
     display_date = deploy_date or generated_date
-    suffix = f" 譛邨よ峩譁ｰ譌･: {display_date}" if display_date else ""
+    suffix = f" 最終更新日: {display_date}" if display_date else ""
     st.caption(
         "Copyright (c) 2026 Tomoki Hotei. "
-        "遉ｾ蜀・茜逕ｨ蜷代￠隧ｦ菴懃沿縲ょ・髢区ュ蝣ｱ繧貞・縺ｫ菴懈・縺励※縺翫ｊ縲∝・螳ｹ縺ｮ豁｣遒ｺ諤ｧ繝ｻ螳悟・諤ｧ繧剃ｿ晁ｨｼ縺吶ｋ繧ゅ・縺ｧ縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・
+        "社内利用向け試作版。公開情報を元に作成しており、内容の正確性・完全性を保証するものではありません。"
         + suffix
     )
 
 
 if __name__ == "__main__":
     main()
-
